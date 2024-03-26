@@ -66,7 +66,7 @@ SIR_simulation <- function(N, S0, I0, RN, D, Time, wideform=FALSE){
     SIR_df$R[t] <- SIR_df$R[t-1]+SIR_df$R_IR[t]
   }
   
-  if (wideform=TRUE){
+  if (wideform==TRUE){
     return(SIR_df)
   }
   else{
@@ -85,63 +85,55 @@ SIR_simulation <- function(N, S0, I0, RN, D, Time, wideform=FALSE){
 SIR_sim1 <- SIR_simulation(N=1000, S0=999, I0=1, RN=4, D=3, Time=28, wideform=FALSE)
 head(SIR_sim1)
 ```
-**(b) What happens when you set wideform=TRUE (just copy the code from lines 83-84 and change FALSE to TRUE and rename your object as SIR_sim1_wide. DO NOT MODIFY THE FUNCTION ITSELF). Use `head` to print the first 6 lines - what do they look like?**
+
+**(b) What happens when you set `wideform=TRUE` (just copy the code from lines 83-84 and change FALSE to TRUE and rename your object as SIR_sim1_wide). Use `head` to print the first 6 lines - what do they look like?**
 
 ```{r}
 
 ```
 
-**(c) What happens if you omit `wideform` from the list of arguments?**
+**(c) What happens if you omit `wideform` from the list of arguments all together? Why?**
 
 ```{r}
 
 ```
 
-**(d) We have been converting our simulated data from wide form to long form by creating a new **
+You will get to explore other ways of reshaping data in your homework.
 
+## Running and storing multiple realizations (iterations) of the simulation
 
-**(b) If we want to make sure we can recover the same result, we need to use the set.seed function prior to running our function and assigning it. Set the seed first (you can pick any number as the argument to set.seed), and then test the function for the following values: N=1000, S0=999, I0=1, RN=2, D=2 days, Time=28 days. Make sure to assign it to a value (like `SIR_sim1`).**
-
-```{r}
-
-```
-
-**(c) Plot your result.**
+**(d) We want run multiple simulations, perhaps hundreds. What are some ways we could think about using our existing function to do this? Let's brainstorm together and try some things out.**
 
 ```{r}
 
 ```
 
-**(d) Do the same thing again, but do not set a seed first (or do, just make sure it is a different seed than before) and assign the simulation to `SIR_sim2`. **
+## Monte Carlo confidence intervals
+
+Loosely, Monte Carlo (MC) intervals can be obtained from many simulations, and can be used to obtain confidence intervals. They can be particularly useful in cases where analytic confidence intervals (like those obtained based on a t-distribution, for example), are not available, or when the assumptions for calculating such intervals are not satisfied, making them unreliable. To calculate these intervals, we will need the `quantile` function from R.
+
+**(e) Run the following example to (re)-familiarize yourself with this function.**
+
+```{r}
+## returns 2.5 and 97.5 percentiles
+quantile(x=1:10, probs=c(0.025, 0.975))
+```
+
+**(f) Modify the code in (e) to return the 5th and 95th percentiles.**
 
 ```{r}
 
 ```
 
-**(e) Now you have two possible outcomes for this SIR model with the same initial conditions. It would be nice to plot them on the same axes so we can compare them (and see that they are different because of the stochastic nature of this model). Let's combine these two data frames - we are going to do this by hand. You can use the following code:**
-
-```{r}
-## We will make a column called Itr that 
-## consists of 1s to say this is the first iteration
-# SIR_sim1$Itr <- rep(1, nrow(SIR_sim1))
-# ## We will make a column called Itr that 
-# ## consists of 2s to say this is the second iteration
-# SIR_sim2$Itr <- rep(2, nrow(SIR_sim2))
-# ## Combine the two data frames 
-# sim_SIR <- rbind(SIR_sim1, SIR_sim2)
-```
-
-**(f) Plot your result. We have used color for compartment using `geom_line(aes(color=compartment))`. You can include information to differentiate between the two simulations:  `geom_line(aes(color=compartment, linetype=as.factor(Itr)))`.**
+**(g) How can we use this on our simulation results from (d)? Let's brainstorm together and try some things out.**
 
 ```{r}
 
 ```
 
-**(g) What do you notice? Comment on your results.**
+## Plotting MC intervals
 
-
-
-**If you have more time, repeat the same steps for the SEIR model. The difference equations are in the notes from the previous class. You may want to begin by coding a function to produce a deterministic simulation. Note, you need this for your current homework assignment, so this is worth your time if you have not started that yet.**
+**(h) Now we want to plot our results, including our MC intervals. We will need to add extra layers to our ggplot to accomplish this.**
 
 ```{r}
 
