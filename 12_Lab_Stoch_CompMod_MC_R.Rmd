@@ -1,0 +1,149 @@
+---
+title: 'Lab 7: Stochastic Compartmental Models and Monte Carlo Intervals'
+author: "YOUR NAME HERE"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+
+## function to calculate lambda_t
+lambda_t_fcn <- function(RN, D, I_i, N){
+  c_e <- RN/D
+  return(1-exp(-c_e*I_i/N))
+}
+```
+
+In your previous lab, you wrote a function for a stochastic SIR model, and plotted the results of two realizations of that stochastic process. While two realizations let us visualize how the stochastic nature of these models can lead to different results, in practice, we will want to (1) run more than two simulations to understand the variability in the process of interest, (2) reshape simulation results from wide form to long form more efficiently for plotting, (3) summarize that variability using some kind of confidence interval, and (4) create plots to visualize our results.
+
+# SIR model
+
+The difference equations for the stochastic version of the SIR model are given below:
+
+$$
+S_t=S_{t-1}-I_t^{(SI)}\\
+I_t=I_{t-1}+I_t^{(SI)}-R_t^{(IR)}\\
+R_t=R_{t-1}+R_t^{(IR)}\\
+$$
+
+Remember now we have random variables in our difference equations: 
+
+- $I_t^{(SI)}$: number of newly infectious individuals at time t
+- $R_t^{(IR)}$: number of newly recovered individuals at time t
+
+We will use the chain binomial structure that we discussed in the previous class, which just means that 
+
+- $I_t^{(SI)}\sim Binomial(S_{t-1}, \lambda_t)$
+- $R_t^{(IR)}\sim Binomial(I_{t-1}, \rho)$, where $\rho=1-e^{-1/D}$
+
+Below I have included a version of the function for the stochastic SIR simulation, which should be similar to the function that you wrote in your previous lab.
+
+```{r}
+SIR_simulation <- function(N, S0, I0, RN, D, Time, wideform=FALSE){
+  SIR_df <- data.frame(time=0:Time,
+                     S=rep(NA, Time+1),
+                     I=rep(NA, Time+1),
+                     R=rep(NA, Time+1),
+                     I_SI=rep(NA, Time+1),
+                     R_IR=rep(NA, Time+1),
+                     lambda_t=rep(NA, Time+1))
+
+  SIR_df$S[1] <- S0
+  SIR_df$I[1] <- I0
+  SIR_df$R[1] <- N-S0-I0
+  
+  rho <- 1-exp(-1/D)
+
+  for (t in 2:(Time+1)){
+    SIR_df$lambda_t[t] <- lambda_t_fcn(RN=RN, D=D, I_i=SIR_df$I[t-1], N=N)
+    SIR_df$I_SI[t] <- rbinom(n=1, size=SIR_df$S[t-1], prob=SIR_df$lambda_t[t])
+    SIR_df$R_IR[t] <- rbinom(n=1, size=SIR_df$I[t-1], prob=rho)
+    SIR_df$S[t] <- SIR_df$S[t-1]-SIR_df$I_SI[t]
+    SIR_df$I[t] <- SIR_df$I[t-1]+SIR_df$I_SI[t]-SIR_df$R_IR[t]
+    SIR_df$R[t] <- SIR_df$R[t-1]+SIR_df$R_IR[t]
+  }
+  
+  if (wideform=TRUE){
+    return(SIR_df)
+  }
+  else{
+      return(data.frame(time=rep(0:Time, 3),
+                    compartment=rep(c("S","I", "R"), each=(Time+1)),
+                    count=c(SIR_df$S, SIR_df$I, SIR_df$R)))
+  }
+}
+```
+
+## Wide form/long form
+
+**(a) One difference between the above function and what you wrote is the inclusion of the variable `wideform` as an argument in the function. By default, it is set to FALSE, and in this case should return a data frame with 3 columns that is hard to read, but facilitates plotting in ggplot2. Confirm that this is what it returns by running the code below.**
+
+```{r}
+SIR_sim1 <- SIR_simulation(N=1000, S0=999, I0=1, RN=4, D=3, Time=28, wideform=FALSE)
+head(SIR_sim1)
+```
+**(b) What happens when you set wideform=TRUE (just copy the code from lines 83-84 and change FALSE to TRUE and rename your object as SIR_sim1_wide. DO NOT MODIFY THE FUNCTION ITSELF). Use `head` to print the first 6 lines - what do they look like?**
+
+```{r}
+
+```
+
+**(c) What happens if you omit `wideform` from the list of arguments?**
+
+```{r}
+
+```
+
+**(d) We have been converting our simulated data from wide form to long form by creating a new **
+
+
+**(b) If we want to make sure we can recover the same result, we need to use the set.seed function prior to running our function and assigning it. Set the seed first (you can pick any number as the argument to set.seed), and then test the function for the following values: N=1000, S0=999, I0=1, RN=2, D=2 days, Time=28 days. Make sure to assign it to a value (like `SIR_sim1`).**
+
+```{r}
+
+```
+
+**(c) Plot your result.**
+
+```{r}
+
+```
+
+**(d) Do the same thing again, but do not set a seed first (or do, just make sure it is a different seed than before) and assign the simulation to `SIR_sim2`. **
+
+```{r}
+
+```
+
+**(e) Now you have two possible outcomes for this SIR model with the same initial conditions. It would be nice to plot them on the same axes so we can compare them (and see that they are different because of the stochastic nature of this model). Let's combine these two data frames - we are going to do this by hand. You can use the following code:**
+
+```{r}
+## We will make a column called Itr that 
+## consists of 1s to say this is the first iteration
+# SIR_sim1$Itr <- rep(1, nrow(SIR_sim1))
+# ## We will make a column called Itr that 
+# ## consists of 2s to say this is the second iteration
+# SIR_sim2$Itr <- rep(2, nrow(SIR_sim2))
+# ## Combine the two data frames 
+# sim_SIR <- rbind(SIR_sim1, SIR_sim2)
+```
+
+**(f) Plot your result. We have used color for compartment using `geom_line(aes(color=compartment))`. You can include information to differentiate between the two simulations:  `geom_line(aes(color=compartment, linetype=as.factor(Itr)))`.**
+
+```{r}
+
+```
+
+**(g) What do you notice? Comment on your results.**
+
+
+
+**If you have more time, repeat the same steps for the SEIR model. The difference equations are in the notes from the previous class. You may want to begin by coding a function to produce a deterministic simulation. Note, you need this for your current homework assignment, so this is worth your time if you have not started that yet.**
+
+```{r}
+
+```
+
